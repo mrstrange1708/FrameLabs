@@ -2,37 +2,15 @@
 
 Thank you for your interest in contributing to FrameLabs. This document provides guidelines and instructions for contributing.
 
-## Development Setup
-
-### Prerequisites
-
-- **Node.js** >= 22.x (managed via [nvm](https://github.com/nvm-sh/nvm))
-- **pnpm** >= 9.x
-- **Docker** & **Docker Compose** (for PostgreSQL and Redis)
-- **Git**
-
-### Getting Started
+## Getting Started
 
 ```bash
 # Clone the repo
 git clone https://github.com/mrstrange1708/FrameLabs.git
 cd FrameLabs
-
-# Switch to the correct Node.js version (reads .nvmrc)
-nvm use
-
-# Install dependencies
-pnpm install
-
-# Set up environment
-cp .env.example .env
-
-# Start infrastructure
-docker compose up -d
-
-# Start development
-pnpm dev
 ```
+
+> Development setup instructions (dependencies, environment, infrastructure) will be added once the codebase is in place. For now, contributions are focused on documentation and project planning.
 
 ## Workflow
 
@@ -57,7 +35,7 @@ chore/<short-description>    # Build, CI, dependency changes
    git checkout -b feat/your-feature-name
    ```
 
-2. **Make your changes** following the code standards below.
+2. **Make your changes** following the standards below.
 
 3. **Commit** with a clear, descriptive message:
 
@@ -83,8 +61,6 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 **Types:** `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`
 
-**Scope (optional):** `web`, `server`, `diagram-core`, `collaboration`, `shared`, `ci`
-
 ### Pull Request Guidelines
 
 - Keep PRs focused — one feature or fix per PR
@@ -96,23 +72,13 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Code Standards
 
-### TypeScript
+These standards apply once the codebase is set up:
 
-- Strict mode is enabled — no `any` types without explicit justification
-- Use `type` imports for type-only imports: `import type { X } from 'y'`
-- Define interfaces for all public API surfaces
-- No unused variables or imports
-
-### Formatting
-
-- **Prettier** handles all formatting — do not manually format
-- **2-space indentation**, single quotes, trailing commas, semicolons
-
-### Testing
-
-- Write unit tests for all business logic
-- Write integration tests for API endpoints
-- Test names should describe the expected behaviour, not the implementation
+- **TypeScript** with strict mode — no `any` types without justification
+- **Prettier** for formatting — 2-space indentation, single quotes, trailing commas, semicolons
+- **ESLint** with zero warnings policy
+- **Vitest** for unit and integration tests
+- **Playwright** for end-to-end tests
 
 ## What NOT to Commit
 
@@ -129,11 +95,8 @@ The following must NEVER be committed:
 
 When reviewing pull requests, check for:
 
-- [ ] TypeScript types are correct and strict
-- [ ] No `any` types without justification
-- [ ] Error handling is appropriate
-- [ ] No security vulnerabilities (injection, XSS, etc.)
-- [ ] Tests cover the changes
 - [ ] No secrets or environment values committed
 - [ ] Code follows existing patterns and conventions
 - [ ] PR description explains the "why"
+- [ ] Tests cover the changes (once testing is set up)
+- [ ] No security vulnerabilities (injection, XSS, etc.)

@@ -24,17 +24,14 @@
 
 <!-- How was this tested? -->
 
+- [ ] Manual testing performed
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
-- [ ] Manual testing performed
 - [ ] E2E tests added/updated
 
 ## Checklist
 
-- [ ] TypeScript type checking passes (`pnpm typecheck`)
-- [ ] ESLint passes with zero warnings (`pnpm lint`)
-- [ ] Prettier formatting applied (`pnpm format`)
-- [ ] Tests pass (`pnpm test`)
 - [ ] No `.env` or secrets committed
 - [ ] PR is focused and reasonably sized
 - [ ] Commit messages follow conventional commits format
+- [ ] CI checks pass

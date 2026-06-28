@@ -1,20 +1,8 @@
 # Default owners for the entire repository
 * @framelabs/core-team
 
-# Frontend
-/apps/web/ @framelabs/frontend-team
-
-# Backend
-/apps/server/ @framelabs/backend-team
-
-# Shared packages
-/packages/diagram-core/ @framelabs/core-team
-/packages/collaboration/ @framelabs/core-team
-/packages/shared/ @framelabs/core-team
-
-# CI/CD and infrastructure
+# CI/CD
 /.github/ @framelabs/core-team
-/docker/ @framelabs/core-team
 
 # Documentation
 /docs/ @framelabs/core-team

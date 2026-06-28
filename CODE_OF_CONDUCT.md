@@ -28,17 +28,7 @@ We as members, contributors, and maintainers pledge to make participation in the
 - Ignoring CI/CD pipeline failures
 - Bypassing code review processes
 
-## Engineering Standards
-
-### Code Quality
-
-- All code must pass TypeScript type checking with strict mode
-- All code must pass ESLint checks with zero warnings
-- All code must be formatted with Prettier before committing
-- All pull requests must pass CI checks before merging
-- No `.env` or secret files should ever be committed
-
-### Collaboration
+## Collaboration Standards
 
 - All changes must go through pull requests — no direct pushes to `main`
 - Pull requests require at least one approving review before merging
@@ -46,7 +36,7 @@ We as members, contributors, and maintainers pledge to make participation in the
 - Keep pull requests focused and reasonably sized
 - Write descriptive PR titles and descriptions
 
-### Repository Hygiene
+## Repository Hygiene
 
 - Do not commit generated files, build artefacts, or `node_modules`
 - Do not commit environment variable files (`.env`, `.env.local`, etc.)
