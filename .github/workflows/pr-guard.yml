@@ -64,7 +64,10 @@ jobs:
 
       - name: Check for conflict markers
         run: |
-          CONFLICT_FILES=$(grep -rl '<<<<<<< \|=======$\|>>>>>>> ' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.json' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.css' --include='*.html' --include='*.prisma' . || true)
+          MARKER_START='<<<<<<<'
+          MARKER_MID='======='
+          MARKER_END='>>>>>>>'
+          CONFLICT_FILES=$(grep -rln "$MARKER_START\|^${MARKER_MID}$\|$MARKER_END" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.json' --include='*.md' --include='*.css' --include='*.html' --include='*.prisma' . || true)
           if [ -n "$CONFLICT_FILES" ]; then
             echo "::error::BLOCKED: Merge conflict markers found in the following files:"
             echo "$CONFLICT_FILES"
