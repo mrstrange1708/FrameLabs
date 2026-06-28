@@ -1,0 +1,8 @@
+# Default owners for the entire repository
+* @framelabs/core-team
+
+# CI/CD
+/.github/ @framelabs/core-team
+
+# Documentation
+/docs/ @framelabs/core-team

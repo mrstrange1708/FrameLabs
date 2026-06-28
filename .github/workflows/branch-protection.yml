@@ -1,0 +1,51 @@
+name: Branch Protection Enforcement
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Ensure pushes to main only come from PRs
+  # This job always passes but logs a warning if
+  # someone pushes directly (use GitHub branch
+  # protection rules to actually block this)
+  # ──────────────────────────────────────────────
+  enforce-pr-workflow:
+    name: Enforce PR Workflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check push source
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ -z "${{ github.event.pull_request }}" ]; then
+            echo "::warning::Direct push to main detected. All changes should go through pull requests."
+            echo ""
+            echo "To enforce this, enable branch protection rules in GitHub:"
+            echo "  Settings > Branches > Add rule for 'main':"
+            echo "  - Require pull request reviews before merging"
+            echo "  - Require status checks to pass before merging"
+            echo "  - Require branches to be up to date before merging"
+            echo "  - Do not allow bypassing the above settings"
+          fi
+
+  # ──────────────────────────────────────────────
+  # Verify no .env files on main
+  # ──────────────────────────────────────────────
+  verify-no-env-on-main:
+    name: Verify No Env Files on Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for .env files in repo
+        run: |
+          ENV_FILES=$(find . -name '.env' -o -name '.env.local' -o -name '.env.development.local' -o -name '.env.test.local' -o -name '.env.production.local' -o -name '.env.production' -o -name '.env.development' | grep -v node_modules | grep -v '.env.example' || true)
+          if [ -n "$ENV_FILES" ]; then
+            echo "::error::CRITICAL: .env files found on main branch! These must be removed immediately:"
+            echo "$ENV_FILES"
+            echo ""
+            echo "Run: git rm <file> && git commit && git push"
+            exit 1
+          fi
+          echo "No .env files found on main. All clear."

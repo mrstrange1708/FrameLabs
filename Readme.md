@@ -65,68 +65,20 @@ Support both visual and syntax-based diagram creation:
 - **Visual Editing** — Drag-and-drop components, draw connections interactively, edit properties through visual panels
 - **Syntax-Based Editing** — Text definitions generate corresponding diagrams, changes propagate bidirectionally, switch between modes freely
 
-**Example:** An engineer defines a database schema in DBML or SQL DDL. FrameLabs automatically generates the visual ERD. Editing either the visual diagram or the text keeps both in sync.
-
-### 3. Database Design Workspace
-
-- Define tables, columns, data types, primary keys, foreign keys, constraints, indices, and default values
-- Model one-to-one, one-to-many, and many-to-many relationships with junction table support
-
-### 4. System Architecture Workspace
-
-- Supported components: frontend apps, backend services, APIs/gateways, databases, caches, message queues, external systems, cloud infrastructure
-- Model communication flows, system dependencies/boundaries, and data movement paths
-
-### 5. Sequence Diagram Workspace
-
-- Define users/actors, services/components, communication sequences, request-response pairs, and async flows
-- Example scenarios: authentication flows, payment pipelines, API request-response workflows
-
-### 6. Class Diagram Workspace
-
-- Create classes, abstract classes, interfaces, traits with typed attributes and method signatures
-- Represent inheritance, implementation, associations, aggregations, dependencies, and compositions
-
-### 7. Intelligent Component System
-
-Diagram objects carry meaning beyond their visual shape:
-
-- **Database component** — Understands tables, fields, relationships, and constraints
-- **Service component** — Understands APIs, ports, dependencies, and protocols
-- **Class component** — Understands methods, properties, visibility, and relationships
-- **Sequence participant** — Understands message ordering, lifelines, and activation bars
-
-### 8. Smart Connection System
-
-- Typed connections (foreign key, dependency, API call, inheritance, etc.)
-- Connections maintain integrity when components are repositioned
-- Labels with names, multiplicity, and direction
-- Directional arrows and dependency type visualisation
-- Semantic validation prevents invalid connections per workspace type
-
-### 9. Real-Time Collaboration
+### 3. Real-Time Collaboration
 
 - Multiple active editors on the same diagram
 - Real-time diagram state synchronisation
 - Live user presence indicators and cursor tracking
 - Simultaneous editing without conflicts
-- Changes remain consistent across all clients — work is never unexpectedly lost
 
-### 10. Version History
+### 4. Version History
 
 - Automatic tracking of all diagram changes
 - Browse and restore previous diagram versions
 - Diff between versions to understand what changed
-- Attribute changes to specific collaborators
 
-### 11. Organisation System
-
-- Workspaces for isolating team or project diagrams
-- Projects for grouping related diagrams
-- Tags and categories for classification
-- Search across diagrams, components, and metadata
-
-### 12. Export & Sharing
+### 5. Export & Sharing
 
 **Export formats:** PNG, SVG, PDF, Markdown-embeddable formats
 
@@ -134,29 +86,11 @@ Diagram objects carry meaning beyond their visual shape:
 
 ---
 
-## Scale Requirements
-
-| Dimension                     | Target                |
-| ----------------------------- | --------------------- |
-| Registered users              | 100,000+              |
-| Monthly active users          | 10,000+               |
-| Concurrent users              | 500+                  |
-| Engineering workspaces        | 50,000+               |
-| Total diagrams                | 500,000+              |
-| Objects per large diagram     | 50,000+               |
-| Object relationships          | Millions              |
-| Active collaborative diagrams | 100+                  |
-| Users editing one workspace   | 50+                   |
-| Diagram revisions             | Millions              |
-| History retention             | Long-term (no expiry) |
-
----
-
 ## Tech Stack
 
 | Layer                | Technology                                    |
 | -------------------- | --------------------------------------------- |
-| **Frontend**         | Next.js 14 (App Router), React 18, TypeScript |
+| **Frontend**         | Next.js (App Router), React, TypeScript       |
 | **Styling**          | Tailwind CSS, Radix UI                        |
 | **Canvas/Diagrams**  | React Flow, Konva.js                          |
 | **Code Editor**      | Monaco Editor                                 |
@@ -166,7 +100,7 @@ Diagram objects carry meaning beyond their visual shape:
 | **ORM**              | Prisma                                        |
 | **Cache & Pub/Sub**  | Redis                                         |
 | **Real-Time**        | Socket.IO, Y.js (CRDT)                        |
-| **Auth**             | NextAuth.js / Auth.js                         |
+| **Auth**             | Auth.js                                       |
 | **Monorepo**         | Turborepo, pnpm                               |
 | **CI/CD**            | GitHub Actions                                |
 | **Containerisation** | Docker, Docker Compose                        |
@@ -174,107 +108,25 @@ Diagram objects carry meaning beyond their visual shape:
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```
 FrameLabs/
 ├── .github/
-│   ├── workflows/           # CI/CD pipelines
+│   ├── workflows/
+│   │   ├── pr-guard.yml            # PR safety checks (no secrets, no conflict markers)
+│   │   ├── security.yml            # CodeQL analysis, secret leak detection
+│   │   └── branch-protection.yml   # Main branch protection enforcement
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── CODEOWNERS
-├── apps/
-│   ├── web/                 # Next.js frontend
-│   │   ├── src/
-│   │   │   ├── app/         # App Router (pages, API routes)
-│   │   │   ├── components/  # UI & diagram components
-│   │   │   ├── hooks/       # Custom React hooks
-│   │   │   ├── lib/         # Utilities, API clients
-│   │   │   ├── stores/      # Zustand state stores
-│   │   │   ├── types/       # TypeScript type definitions
-│   │   │   └── styles/      # Global styles
-│   │   └── public/          # Static assets
-│   └── server/              # Fastify backend API
-│       ├── src/
-│       │   ├── api/         # Routes, controllers, middleware
-│       │   ├── services/    # Business logic
-│       │   ├── models/      # Data models
-│       │   ├── ws/          # WebSocket handlers
-│       │   ├── lib/         # Shared utilities
-│       │   └── config/      # Server configuration
-│       ├── prisma/          # Database schema & migrations
-│       └── tests/           # Unit, integration, e2e tests
-├── packages/
-│   ├── shared/              # Shared types, utils, constants
-│   ├── diagram-core/        # Core diagram engine
-│   │   └── src/
-│   │       ├── workspaces/  # Database, architecture, sequence, class, flow
-│   │       ├── components/  # Diagram component definitions
-│   │       ├── connections/ # Connection logic & validation
-│   │       ├── parser/      # Syntax-to-diagram parser
-│   │       ├── renderer/    # Diagram rendering engine
-│   │       └── validators/  # Semantic validation rules
-│   ├── collaboration/       # CRDT, sync, presence engine
-│   └── eslint-config/       # Shared ESLint configuration
-├── docs/                    # Architecture & PRD documentation
-├── docker/                  # Docker & Compose files
-├── scripts/                 # Build, deploy, utility scripts
-├── .env.example             # Environment variable template
-├── turbo.json               # Turborepo pipeline config
-├── tsconfig.base.json       # Base TypeScript config
-├── package.json             # Root workspace config
-├── CODE_OF_CONDUCT.md       # Community guidelines
-└── CONTRIBUTING.md          # Contribution guidelines
+├── docs/
+│   └── PRD.md                      # Product Requirements Document
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+└── Readme.md
 ```
 
----
-
-## Getting Started
-
-### Prerequisites
-
-- **Node.js** >= 20.x
-- **pnpm** >= 9.x
-- **Docker** & **Docker Compose**
-- **PostgreSQL** 16+
-- **Redis** 7+
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/mrstrange1708/FrameLabs.git
-cd FrameLabs
-
-# Switch to the correct Node.js version (reads .nvmrc)
-nvm use
-
-# Install dependencies
-pnpm install
-
-# Copy environment variables
-cp .env.example .env
-
-# Start infrastructure (PostgreSQL, Redis)
-docker compose up -d
-
-# Run database migrations
-pnpm --filter server db:migrate
-
-# Start development servers
-pnpm dev
-```
-
-### Development Commands
-
-```bash
-pnpm dev           # Start all apps in development mode
-pnpm build         # Build all apps and packages
-pnpm lint          # Lint all packages
-pnpm typecheck     # Run TypeScript type checking
-pnpm test          # Run all tests
-pnpm test:e2e      # Run end-to-end tests
-pnpm format        # Format code with Prettier
-```
+> The codebase (apps, packages, configs) will be added as development begins. See [docs/PRD.md](docs/PRD.md) for the full technical specification.
 
 ---
 
@@ -308,25 +160,6 @@ pnpm format        # Format code with Prettier
 | **Performance**     | Large diagrams (50k+ objects) remain responsive; collaboration is low-latency |
 | **Maintainability** | New diagram workspace types can be introduced without architectural rewrites  |
 | **Scalability**     | Platform supports growing teams and millions of versioned diagram revisions   |
-
----
-
-## Success Metrics
-
-### Product Success
-
-- Engineers can design real software systems, not toy diagrams
-- Each diagram type feels purpose-built for its domain
-- Visual and syntax workflows operate seamlessly together
-- Teams can collaborate on diagrams in real time
-- Architecture history is preserved and browsable
-
-### Engineering Success
-
-- Clean, maintainable architecture decisions
-- Stable, repeatable deployments
-- Well-structured source repository
-- Comprehensive documentation
 
 ---
 

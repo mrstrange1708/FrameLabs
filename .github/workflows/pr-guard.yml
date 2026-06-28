@@ -1,0 +1,176 @@
+name: PR Guard
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Block .env and secret files from being committed
+  # ──────────────────────────────────────────────
+  no-secrets:
+    name: No Secrets or Env Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for .env files
+        run: |
+          FORBIDDEN_FILES=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD | grep -iE '(^|/)\.env($|\.|[^.]*$)' | grep -viE '\.example$|\.template$' || true)
+          if [ -n "$FORBIDDEN_FILES" ]; then
+            echo "::error::BLOCKED: The following .env / environment files must NOT be committed:"
+            echo "$FORBIDDEN_FILES"
+            echo ""
+            echo "Use .env.example for templates. Add secrets to your CI/CD secrets, not to the repo."
+            exit 1
+          fi
+          echo "No .env files found in diff."
+
+      - name: Check for secret/credential files
+        run: |
+          FORBIDDEN=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD | grep -iE '\.(pem|key|cert|p12|pfx|jks|keystore|credentials|secret)$' || true)
+          if [ -n "$FORBIDDEN" ]; then
+            echo "::error::BLOCKED: The following secret/credential files must NOT be committed:"
+            echo "$FORBIDDEN"
+            exit 1
+          fi
+          echo "No secret files found in diff."
+
+      - name: Scan for hardcoded secrets in code
+        run: |
+          PATTERNS='(password|secret|api_key|apikey|access_token|private_key)\s*[:=]\s*["\x27][^\s"'\'']{8,}'
+          MATCHES=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.json' | grep -iEn "$PATTERNS" | grep -v 'example\|placeholder\|test\|mock\|fake\|dummy\|TODO\|FIXME\|\.example' || true)
+          if [ -n "$MATCHES" ]; then
+            echo "::warning::Possible hardcoded secrets detected in diff. Please review:"
+            echo "$MATCHES"
+            echo ""
+            echo "If these are false positives (test values, placeholders), this is just a warning."
+          fi
+          echo "Secret scan complete."
+
+  # ──────────────────────────────────────────────
+  # Block merge conflict markers
+  # ──────────────────────────────────────────────
+  no-conflict-markers:
+    name: No Merge Conflict Markers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for conflict markers
+        run: |
+          MARKER_START='<<<<<<<'
+          MARKER_MID='======='
+          MARKER_END='>>>>>>>'
+          CONFLICT_FILES=$(grep -rln "$MARKER_START\|^${MARKER_MID}$\|$MARKER_END" --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.json' --include='*.md' --include='*.css' --include='*.html' --include='*.prisma' . || true)
+          if [ -n "$CONFLICT_FILES" ]; then
+            echo "::error::BLOCKED: Merge conflict markers found in the following files:"
+            echo "$CONFLICT_FILES"
+            echo ""
+            echo "Resolve all merge conflicts before merging."
+            exit 1
+          fi
+          echo "No merge conflict markers found."
+
+  # ──────────────────────────────────────────────
+  # Block debug/TODO artifacts
+  # ──────────────────────────────────────────────
+  no-debug-artifacts:
+    name: No Debug Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for console.log in production code
+        run: |
+          CONSOLE_LOGS=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' | grep -v '\.test\.\|\.spec\.\|__tests__\|tests/' | xargs grep -n 'console\.log(' 2>/dev/null || true)
+          if [ -n "$CONSOLE_LOGS" ]; then
+            echo "::warning::console.log() found in production code. Consider removing before merge:"
+            echo "$CONSOLE_LOGS"
+          fi
+
+      - name: Check for debugger statements
+        run: |
+          DEBUGGERS=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' | grep -n '^\+.*\bdebugger\b' || true)
+          if [ -n "$DEBUGGERS" ]; then
+            echo "::error::BLOCKED: debugger statements found in diff:"
+            echo "$DEBUGGERS"
+            exit 1
+          fi
+          echo "No debugger statements found."
+
+  # ──────────────────────────────────────────────
+  # PR Size Check
+  # ──────────────────────────────────────────────
+  pr-size:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l | tr -d ' ')
+          ADDITIONS=$(git diff --stat origin/${{ github.base_ref }}...HEAD | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+          DELETIONS=$(git diff --stat origin/${{ github.base_ref }}...HEAD | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
+          TOTAL_CHANGES=$((ADDITIONS + DELETIONS))
+
+          echo "Changed files: $CHANGED_FILES"
+          echo "Lines added: $ADDITIONS"
+          echo "Lines deleted: $DELETIONS"
+          echo "Total changes: $TOTAL_CHANGES"
+
+          if [ "$TOTAL_CHANGES" -gt 1500 ]; then
+            echo "::warning::This PR has $TOTAL_CHANGES line changes. Consider breaking it into smaller PRs for easier review."
+          fi
+
+          if [ "$CHANGED_FILES" -gt 50 ]; then
+            echo "::warning::This PR modifies $CHANGED_FILES files. Consider splitting into focused PRs."
+          fi
+
+  # ──────────────────────────────────────────────
+  # Validate package.json files
+  # ──────────────────────────────────────────────
+  validate-packages:
+    name: Validate Package Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JSON syntax in package.json files
+        run: |
+          INVALID=0
+          for f in $(find . -name 'package.json' -not -path '*/node_modules/*'); do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "::error::Invalid JSON in $f"
+              INVALID=1
+            fi
+          done
+          if [ "$INVALID" -eq 1 ]; then
+            exit 1
+          fi
+          echo "All package.json files are valid JSON."
+
+      - name: Check for version consistency
+        run: |
+          echo "Checking TypeScript version consistency across packages..."
+          TS_VERSIONS=$(find . -name 'package.json' -not -path '*/node_modules/*' -exec grep -l '"typescript"' {} \; | xargs grep '"typescript"' | grep -oE '"[^"]*"$' | sort -u)
+          TS_COUNT=$(echo "$TS_VERSIONS" | wc -l | tr -d ' ')
+          if [ "$TS_COUNT" -gt 1 ]; then
+            echo "::warning::Multiple TypeScript versions found across packages:"
+            echo "$TS_VERSIONS"
+            echo "Consider aligning to a single version."
+          fi
+          echo "Version consistency check complete."
