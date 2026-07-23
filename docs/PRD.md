@@ -208,6 +208,8 @@ sequenceDiagram
 
 ### 4.6 Class Diagram Workspace
 
+![Class Diagram Example](assets/Frame_lab_doc_version.png)
+
 **Element Types:**
 
 - Classes: name, attributes (type + visibility), methods (signature + visibility)
