@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DiagramType {
+  DATABASE
+  ARCHITECTURE
+  SEQUENCE
+  CLASS
+  FLOW
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum SharePermission {
+  VIEW
+  COMMENT
+}
+
+model User {
+  id         String   @id @default(uuid()) @db.Uuid
+  email      String   @unique
+  name       String
+  avatarUrl  String?  @map("avatar_url")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  diagramsCreated  Diagram[]
+  diagramVersions  DiagramVersion[]
+  memberships      WorkspaceMember[]
+
+  @@map("users")
+}
+
+model Organisation {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  workspaces Workspace[]
+
+  @@map("organisations")
+}
+
+model Workspace {
+  id          String   @id @default(uuid()) @db.Uuid
+  orgId       String   @db.Uuid @map("org_id")
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  organisation Organisation @relation(fields: [orgId], references: [id])
+
+  members  WorkspaceMember[]
+  diagrams Diagram[]
+
+  @@index([orgId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  workspaceId String        @db.Uuid @map("workspace_id")
+  userId      String        @db.Uuid @map("user_id")
+  role        WorkspaceRole
+  joinedAt    DateTime      @default(now()) @map("joined_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@id([workspaceId, userId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+model Diagram {
+  id          String       @id @default(uuid()) @db.Uuid
+  workspaceId String       @db.Uuid @map("workspace_id")
+  name        String
+  type        DiagramType
+  content     Json
+  syntax      String?
+  createdBy   String       @db.Uuid @map("created_by")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  creator   User      @relation(fields: [createdBy], references: [id])
+
+  versions           DiagramVersion[]
+  shareLinks         ShareLink[]
+  collaborationRoom  CollaborationRoom?
+
+  @@index([workspaceId])
+  @@index([createdBy])
+  @@map("diagrams")
+}
+
+model DiagramVersion {
+  id        String   @id @default(uuid()) @db.Uuid
+  diagramId String   @db.Uuid @map("diagram_id")
+  version   Int
+  snapshot  Json
+  authorId  String   @db.Uuid @map("author_id")
+  message   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  diagram Diagram @relation(fields: [diagramId], references: [id])
+  author  User    @relation(fields: [authorId], references: [id])
+
+  @@unique([diagramId, version])
+  @@index([diagramId])
+  @@index([authorId])
+  @@map("diagram_versions")
+}
+
+model ShareLink {
+  id           String          @id @default(uuid()) @db.Uuid
+  diagramId    String          @db.Uuid @map("diagram_id")
+  token        String          @unique
+  permission   SharePermission
+  passwordHash String?         @map("password_hash")
+  expiresAt    DateTime?       @map("expires_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  diagram Diagram @relation(fields: [diagramId], references: [id])
+
+  @@index([diagramId])
+  @@map("share_links")
+}
+
+model DiagramComponent {
+  id        String  @id @default(uuid())
+  type      String
+  positionX Float   @map("position_x")
+  positionY Float   @map("position_y")
+  width     Float
+  height    Float
+  data      Json
+  ports     Json
+
+  databaseTable DatabaseTableComponent?
+  service       ServiceComponent?
+
+  sourceConnections Connection[] @relation("SourceComponent")
+  targetConnections Connection[] @relation("TargetComponent")
+
+  @@map("diagram_components")
+}
+
+model DatabaseTableComponent {
+  id        String @id
+  tableName String @map("table_name")
+  columns   Json
+  indices   Json
+  constraints Json
+
+  component DiagramComponent @relation(fields: [id], references: [id])
+
+  @@map("database_table_components")
+}
+
+model ServiceComponent {
+  id           String @id
+  serviceName  String @map("service_name")
+  framework    String
+  port         Int
+  endpoints    Json
+  dependencies Json
+
+  component DiagramComponent @relation(fields: [id], references: [id])
+
+  @@map("service_components")
+}
+
+model Connection {
+  id                String @id @default(uuid())
+  connectionType    String @map("connection_type")
+
+  sourceComponentId String @map("source_component_id")
+  sourcePortId      String @map("source_port_id")
+
+  targetComponentId String @map("target_component_id")
+  targetPortId      String @map("target_port_id")
+
+  label        String?
+  multiplicity Json?
+  direction    String?
+  style        String?
+
+  sourceComponent DiagramComponent @relation("SourceComponent", fields: [sourceComponentId], references: [id])
+  targetComponent DiagramComponent @relation("TargetComponent", fields: [targetComponentId], references: [id])
+
+  @@index([sourceComponentId])
+  @@index([targetComponentId])
+  @@map("connections")
+}
+
+model CollaborationRoom {
+  diagramId    String @id @db.Uuid @map("diagram_id")
+  yDoc         Json   @map("y_doc")
+  userPresence Json   @map("user_presence")
+  syncState    String @map("sync_state")
+
+  diagram Diagram @relation(fields: [diagramId], references: [id])
+
+  events WebSocketEvent[]
+
+  @@map("collaboration_rooms")
+}
+
+model WebSocketEvent {
+  id         String   @id @default(uuid())
+  roomId     String   @db.Uuid @map("room_id")
+  eventType  String   @map("event_type")
+  payload    Json
+  timestamp  DateTime @default(now())
+
+  room CollaborationRoom @relation(fields: [roomId], references: [diagramId])
+
+  @@index([roomId])
+  @@map("websocket_events")
+}
