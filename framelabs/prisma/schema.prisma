@@ -46,6 +46,7 @@ model Workspace {
 
   organisation Organisation @relation(fields: [orgId], references: [id])
   members      WorkspaceMember[]
+  diagrams     Diagram[]
 
   @@index([orgId])
   @@map("workspaces")
@@ -63,4 +64,19 @@ model WorkspaceMember {
   @@id([workspaceId, userId])
   @@index([userId])
   @@map("workspace_members")
+}
+
+model Diagram {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid @map("workspace_id")
+  name        String
+  description String?
+  content     Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("diagrams")
 }
